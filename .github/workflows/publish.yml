@@ -1,0 +1,42 @@
+name: publish
+
+on:
+  pull_request:
+  push:
+    tags:
+      - "*"
+  workflow_run:
+    workflows: ["Tag release"]
+    types:
+      - completed
+
+jobs:
+  build-and-push-to-gcr:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' || github.event.workflow_run.conclusion == 'success' || startsWith(github.ref, 'refs/tags/v') }}
+    permissions:
+      contents: "read"
+      id-token: "write"
+      actions: "read"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Retrieve version number
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          workflow_conclusion: success
+      - name: Set env
+        run: |
+          touch new_tag # in case it doesn't exist from the previous step
+          TAG=$(cat new_tag)
+          echo ::notice::Read tag from previous workflow: $TAG
+          if [ -z "$TAG" ]; then
+            # We didn't find the version from the previous workflow,
+            # so fall back to the git ref
+            TAG=${GITHUB_REF#refs/*/}
+            echo ::notice::Set TAG=$TAG from GITHUB_REF=$GITHUB_REF
+          fi
+          TAG=$(echo "$TAG" | sed -e 's/[^[:alpha:][:digit:].-]/_/g')
+          echo ::notice::DOCKER_TAG=$TAG
+          echo "DOCKER_TAG=$TAG" >> $GITHUB_ENV
