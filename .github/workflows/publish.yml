@@ -1,10 +1,6 @@
 name: publish
 
 on:
-  pull_request:
-  push:
-    tags:
-      - "*"
   workflow_run:
     workflows: ["Tag release"]
     types:
@@ -28,8 +24,8 @@ jobs:
           workflow_conclusion: success
       - name: Set env
         run: |
-          touch new_tag # in case it doesn't exist from the previous step
-          TAG=$(cat new_tag)
+          mkdir -p tag && touch tag/version.txt # in case it doesn't exist from the previous step
+          TAG=$(cat tag/version.txt)
           echo ::notice::Read tag from previous workflow: $TAG
           if [ -z "$TAG" ]; then
             # We didn't find the version from the previous workflow,

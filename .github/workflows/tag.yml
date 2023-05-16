@@ -10,9 +10,9 @@ jobs:
         with:
           fetch-depth: 1
       - name: Store version number
-        run: echo "${{ github.ref }}" > new_tag
+        run: echo "${{ github.ref }}" > tag/version.txt
       - name: Upload version number
         uses: actions/upload-artifact@v3
         with:
           name: new_tag
-          path: new_tag
+          path: tag/
